@@ -28,50 +28,52 @@ const uploading=async (req, res) => {
         }
         
         let i=2;
-
+    
         fs.createReadStream(filePath)
         .pipe(stripBomStream())
         .pipe(csv())
         .on('data', async(row) => {
-
+            
             const key= Object.keys(row);
             const values= Object.values(row);
 
             const userFind=await userModel.findOne({email:row.email});
 
             if(userFind){
+                console.log(`user with this email ${userFind.email} is present`)
                 return;
-            }
-
-            const userDetail=await userModel.create({
-                name:row.name,
-                email:row.email
-            });
-
-            const list=await listModel.findOneAndUpdate({title:listTitle},{$push:{customProperties:userDetail._id}})
-            await list.save();
-            
-            
-            while(i<key.length){
-
-                const customAdded=await customModel.create({
-                    title:key[i],
-                    defaultValue:values[i]
+            }else{
+                const userDetail=await userModel.create({
+                    name:row.name,
+                    email:row.email
                 });
 
-                const user=await userModel.findOneAndUpdate({email:row.email},{$push:{customProperty:customAdded._id}})
-                await user.save();
-                i++;
-            }
-            i=2;
+                const list=await listModel.findOneAndUpdate({title:listTitle},{$push:{customProperties:userDetail._id}})
+                await list.save();
+                
+                
+                while(i<key.length){
+
+                    const customAdded=await customModel.create({
+                        title:key[i],
+                        defaultValue:values[i]
+                    });
+
+                    const user=await userModel.findOneAndUpdate({email:row.email},{$push:{customProperty:customAdded._id}})
+                    await user.save();
+                    i++;
+                }
+                i=2;
+            }    
         })
-        .on('end', () => {
+        .on('end', async() => {
             fs.unlinkSync(filePath);
-            return res.status(200).send("user has been uploaded successfully");
+            const allUsers=await userModel.find({}).populate('customProperty')
+            return res.status(200).json(allUsers);
         })
 
     }catch(err){
-        return res.status(500).send("some thing went weong");
+        return res.status(500).send("some thing went wrong");
     }
 }
 
