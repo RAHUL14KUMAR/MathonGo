@@ -8,6 +8,11 @@ const createList=async(req,res)=>{
         return res.status(400).json({message:'title is required'})
     }
 
+    const lists=await listModal.findOne({title:listTitle});
+    if(lists){
+        return res.status(400).json({message:"send a unique listTitle string"})
+    }
+
     const list=await listModal.create({
         title:listTitle
     })
