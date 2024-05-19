@@ -19,6 +19,12 @@ const uploading=async (req, res) => {
         }
         
         const filePath = path.join('uploads', req.file.filename);
+
+        const extension=path.extname(req.file.originalname).toLowerCase();
+
+        if(extension!=='.csv'){
+            throw new Error('please upload csv file');
+        }
         
         let stripBomStream;
         try {
